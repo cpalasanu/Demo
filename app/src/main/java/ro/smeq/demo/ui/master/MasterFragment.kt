@@ -1,16 +1,14 @@
 package ro.smeq.demo.ui.master
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.fragment_master.*
+import kotlinx.android.synthetic.main.recycler_view.*
 import ro.smeq.demo.R
 import ro.smeq.demo.ui.MainActivity
 
@@ -22,7 +20,7 @@ class MasterFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_master, container, false)
+        return inflater.inflate(R.layout.recycler_view, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

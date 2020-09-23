@@ -2,9 +2,9 @@ package ro.smeq.demo.ui
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import ro.smeq.demo.R
+import ro.smeq.demo.ui.detail.DetailFragment
 import ro.smeq.demo.ui.master.ListItem
 import ro.smeq.demo.ui.master.MasterFragment
 
