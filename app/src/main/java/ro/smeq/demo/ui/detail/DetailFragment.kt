@@ -1,5 +1,6 @@
 package ro.smeq.demo.ui.detail
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,15 +9,30 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.recycler_view.*
+import ro.smeq.demo.MyApp
 import ro.smeq.demo.R
+import ro.smeq.demo.repository.Repository
+import timber.log.Timber
 import java.lang.IllegalStateException
+import javax.inject.Inject
 
 class DetailFragment : Fragment() {
-    private val adapter = Adapter()
+    private val disposable = CompositeDisposable()
+    private val adapter = Adapter().apply { setHasStableIds(true) }
+
+    @Inject
+    lateinit var repository: Repository
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (context.applicationContext as MyApp).applicationComponent.inject(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,21 +54,38 @@ class DetailFragment : Fragment() {
         }
         recycler_view.adapter = adapter
 
-        adapter.submitList(
-            listOf(
-                HeaderListItem(0, "Header title", "Header body with a lot of text"),
-                AlbumListItem(1, "Album title 1"),
-                PhotoListItem(2, "Photo 1", "https://storage0.dms.mpinteractiv.ro/media/1/1/1687/19551751/1/firea-interviu-prf.jpg?width=560"),
-                PhotoListItem(3, "Photo 2", "https://storage0.dms.mpinteractiv.ro/media/1/1/1687/19551751/1/firea-interviu-prf.jpg?width=560"),
-                PhotoListItem(4, "Photo 3", "https://storage0.dms.mpinteractiv.ro/media/1/1/1687/19551751/1/firea-interviu-prf.jpg?width=560"),
-                PhotoListItem(5, "Photo 4", "https://storage0.dms.mpinteractiv.ro/media/1/1/1687/19551751/1/firea-interviu-prf.jpg?width=560"),
-                PhotoListItem(6, "Photo 5", "https://storage0.dms.mpinteractiv.ro/media/1/1/1687/19551751/1/firea-interviu-prf.jpg?width=560"),
-                PhotoListItem(7, "Photo 6", "https://storage0.dms.mpinteractiv.ro/media/1/1/1687/19551751/1/firea-interviu-prf.jpg?width=560"),
-            ))
+        arguments?.getLong(KEY_POST_ID)?.let {
+            updatePost(it)
+        }
     }
 
     fun updatePost(postId: Long) {
-        // todo
+        disposable.add(
+            repository.post(postId)
+                .map { postWithAlbums ->
+                    val adapterList = ArrayList<ListItem>()
+                    adapterList.add(HeaderListItem(postWithAlbums.post.id, postWithAlbums.post.title, postWithAlbums.post.body))
+                    postWithAlbums.albumsWithPhotos.forEach { albumWithPhotos ->
+                        adapterList.add(AlbumListItem(albumWithPhotos.album.id, albumWithPhotos.album.title))
+                        albumWithPhotos.photos.forEach { photo ->
+                            adapterList.add(PhotoListItem(photo.id, photo.title, photo.url))
+                        }
+                    }
+
+                    return@map adapterList
+                }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { adapter.submitList(it) },
+                    Timber::e
+                )
+        )
+    }
+
+    override fun onStop() {
+        disposable.clear()
+        super.onStop()
     }
 
     class Adapter: RecyclerView.Adapter<VH>() {
@@ -102,6 +135,10 @@ class DetailFragment : Fragment() {
         }
 
         override fun getItemCount() = items?.size ?: 0
+
+        override fun getItemId(position: Int): Long {
+            return items?.get(position)?.hashCode()?.toLong() ?: 0
+        }
     }
 
     sealed class VH(view: View) : RecyclerView.ViewHolder(view) {
@@ -118,5 +155,9 @@ class DetailFragment : Fragment() {
             val textView: TextView = view.findViewById(R.id.text_view)
             val imageView: ImageView = view.findViewById(R.id.image_view)
         }
+    }
+
+    companion object {
+        const val KEY_POST_ID = "post_id"
     }
 }

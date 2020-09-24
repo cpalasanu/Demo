@@ -1,5 +1,6 @@
 package ro.smeq.demo.ui.master
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,12 +9,28 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.recycler_view.*
+import ro.smeq.demo.MyApp
 import ro.smeq.demo.R
+import ro.smeq.demo.repository.Repository
 import ro.smeq.demo.ui.MainActivity
+import timber.log.Timber
+import javax.inject.Inject
 
 class MasterFragment : Fragment() {
-    private val adapter = Adapter()
+    private val disposable = CompositeDisposable()
+    private val adapter = Adapter().apply { setHasStableIds(true) }
+
+    @Inject
+    lateinit var repository: Repository
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (context.applicationContext as MyApp).applicationComponent.inject(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,20 +50,29 @@ class MasterFragment : Fragment() {
                 (activity as MainActivity).onListItemClick(it)
             }
         }
-        adapter.submitList(listOf(
-            ListItem(1,"Test", "test@yahoo.com"),
-            ListItem(1,"This", "test@gmail.com"),
-            ListItem(1,"List", "test@hotmal.com"),
-            ListItem(1,"Test", "test@yahoo.com"),
-            ListItem(1,"This", "test@gmail.com"),
-            ListItem(1,"List", "test@hotmal.com"),
-            ListItem(1,"Test", "test@yahoo.com"),
-            ListItem(1,"This", "test@gmail.com"),
-            ListItem(1,"List", "test@hotmal.com"),
-        ))
     }
 
-    class Adapter: RecyclerView.Adapter<VH>() {
+    override fun onStart() {
+        super.onStart()
+        disposable.add(
+            repository.posts()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Timber.i("Post: $it")
+                    adapter.submitList(
+                        it.map { post -> ListItem(post.post.id, post.post.title, post.email) }
+                    )
+                }, Timber::e)
+        )
+    }
+
+    override fun onStop() {
+        disposable.clear()
+        super.onStop()
+    }
+
+    class Adapter : RecyclerView.Adapter<VH>() {
         private var items: List<ListItem>? = null
         var clickListener: ((ListItem) -> Unit)? = null
 
@@ -72,6 +98,10 @@ class MasterFragment : Fragment() {
         }
 
         override fun getItemCount() = items?.size ?: 0
+
+        override fun getItemId(position: Int): Long {
+            return items?.get(position)?.id ?: 0
+        }
     }
 
     class VH(view: View) : RecyclerView.ViewHolder(view) {

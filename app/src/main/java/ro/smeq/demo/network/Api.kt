@@ -2,6 +2,10 @@ package ro.smeq.demo.network
 
 import io.reactivex.Single
 import retrofit2.http.GET
+import ro.smeq.demo.db.Album
+import ro.smeq.demo.db.Photo
+import ro.smeq.demo.db.Post
+import ro.smeq.demo.db.User
 
 interface Api {
     @GET("posts")
