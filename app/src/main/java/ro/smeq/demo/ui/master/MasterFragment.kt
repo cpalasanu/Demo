@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.recycler_view.*
+import kotlinx.android.synthetic.main.fragment_master.*
 import ro.smeq.demo.MyApp
 import ro.smeq.demo.R
 import ro.smeq.demo.repository.Repository
@@ -37,7 +38,7 @@ class MasterFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.recycler_view, container, false)
+        return inflater.inflate(R.layout.fragment_master, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -49,6 +50,31 @@ class MasterFragment : Fragment() {
             if (activity is MainActivity) {
                 (activity as MainActivity).onListItemClick(it)
             }
+        }
+        adapter.deleteCallback = {
+            disposable.add(
+                repository.deletePost(it.id)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                        { Timber.d("Post ${it.id} deleted") },
+                        Timber::e
+                    )
+            )
+        }
+
+        swipe_to_refresh.setOnRefreshListener {
+            disposable.add(
+                repository.sync()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                        { swipe_to_refresh.isRefreshing = false },
+                        { throwable ->
+                            swipe_to_refresh.isRefreshing = false
+                            Timber.e(throwable)
+                        })
+            )
         }
     }
 
@@ -75,6 +101,7 @@ class MasterFragment : Fragment() {
     class Adapter : RecyclerView.Adapter<VH>() {
         private var items: List<ListItem>? = null
         var clickListener: ((ListItem) -> Unit)? = null
+        var deleteCallback: ((ListItem) -> Unit)? = null
 
         fun submitList(newList: List<ListItem>?) {
             items = newList
@@ -94,6 +121,9 @@ class MasterFragment : Fragment() {
                 holder.itemView.setOnClickListener {
                     clickListener?.invoke(listItem)
                 }
+                holder.ivDelete.setOnClickListener {
+                    deleteCallback?.invoke(listItem)
+                }
             }
         }
 
@@ -107,5 +137,6 @@ class MasterFragment : Fragment() {
     class VH(view: View) : RecyclerView.ViewHolder(view) {
         val tvTitle: TextView = view.findViewById(R.id.tv_title)
         val tvEmail: TextView = view.findViewById(R.id.tv_email)
+        val ivDelete: ImageView = view.findViewById(R.id.iv_delete)
     }
 }

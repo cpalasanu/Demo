@@ -10,9 +10,11 @@ interface PostDao {
     @Query("SELECT posts.*, users.email FROM posts INNER JOIN users ON posts.userId = users.id")
     fun getAllPosts(): Flowable<List<PostWithUserEmail>>
 
-    @Transaction
     @Query("SELECT * FROM posts WHERE posts.id = :postId")
     fun getPost(postId: Long): Flowable<Post>
+
+    @Query("DELETE FROM posts WHERE posts.id = :postId")
+    fun deletePost(postId: Long): Completable
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertPosts(posts: List<Post>): Completable

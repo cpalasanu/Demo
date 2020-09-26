@@ -14,7 +14,7 @@ import com.squareup.picasso.Picasso
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.recycler_view.*
+import kotlinx.android.synthetic.main.fragment_detail.*
 import ro.smeq.demo.MyApp
 import ro.smeq.demo.R
 import ro.smeq.demo.repository.Repository
@@ -39,7 +39,7 @@ class DetailFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.recycler_view, container, false)
+        return inflater.inflate(R.layout.fragment_detail, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

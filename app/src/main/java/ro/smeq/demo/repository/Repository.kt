@@ -29,6 +29,10 @@ class Repository(private val api: Api, private val db: MyDatabase) {
                     .map { PostWithRelatedAlbums(post, it) }
             }
     }
+
+    fun deletePost(postId: Long): Completable {
+        return db.postDao().deletePost(postId)
+    }
 }
 
 data class PostWithRelatedAlbums(
