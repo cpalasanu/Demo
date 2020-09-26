@@ -84,7 +84,7 @@ class MasterFragment : Fragment() {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    Timber.i("Post: $it")
+                    Timber.i("Posts: $it")
                     adapter.submitList(it)
                 }, Timber::e)
         )
