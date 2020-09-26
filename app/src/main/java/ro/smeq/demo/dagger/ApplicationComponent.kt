@@ -9,7 +9,7 @@ import ro.smeq.demo.ui.master.MasterFragment
 import javax.inject.Singleton
 
 @Singleton
-@Component(modules = [NetworkModule::class, RepositoryModule::class])
+@Component(modules = [NetworkModule::class, RepositoryModule::class, PresenterModule::class])
 interface ApplicationComponent {
     fun inject(mainActivity: MainActivity)
     fun inject(masterFragment: MasterFragment)

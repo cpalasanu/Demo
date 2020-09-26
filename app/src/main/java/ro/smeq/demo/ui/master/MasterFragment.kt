@@ -16,7 +16,6 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_master.*
 import ro.smeq.demo.MyApp
 import ro.smeq.demo.R
-import ro.smeq.demo.repository.Repository
 import ro.smeq.demo.ui.MainActivity
 import timber.log.Timber
 import javax.inject.Inject
@@ -26,7 +25,7 @@ class MasterFragment : Fragment() {
     private val adapter = Adapter().apply { setHasStableIds(true) }
 
     @Inject
-    lateinit var repository: Repository
+    lateinit var presenter: MasterPresenter
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -53,7 +52,7 @@ class MasterFragment : Fragment() {
         }
         adapter.deleteCallback = {
             disposable.add(
-                repository.deletePost(it.id)
+                presenter.deletePost(it.id)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
@@ -65,7 +64,7 @@ class MasterFragment : Fragment() {
 
         swipe_to_refresh.setOnRefreshListener {
             disposable.add(
-                repository.sync()
+                presenter.sync()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
@@ -81,14 +80,12 @@ class MasterFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         disposable.add(
-            repository.posts()
+            presenter.getPosts()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     Timber.i("Post: $it")
-                    adapter.submitList(
-                        it.map { post -> ListItem(post.post.id, post.post.title, post.email) }
-                    )
+                    adapter.submitList(it)
                 }, Timber::e)
         )
     }

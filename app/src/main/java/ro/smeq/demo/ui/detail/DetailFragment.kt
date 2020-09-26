@@ -27,7 +27,7 @@ class DetailFragment : Fragment() {
     private val adapter = Adapter().apply { setHasStableIds(true) }
 
     @Inject
-    lateinit var repository: Repository
+    lateinit var presenter: DetailPresenter
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -45,7 +45,7 @@ class DetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         recycler_view.layoutManager = GridLayoutManager(context, 2).apply {
             orientation = GridLayoutManager.VERTICAL
-            spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
+            spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
                     return if (adapter.getItemViewType(position) == R.layout.item_detail_photo) 1
                     else 2
@@ -61,23 +61,14 @@ class DetailFragment : Fragment() {
 
     fun updatePost(postId: Long) {
         disposable.add(
-            repository.post(postId)
-                .map { postWithAlbums ->
-                    val adapterList = ArrayList<ListItem>()
-                    adapterList.add(HeaderListItem(postWithAlbums.post.id, postWithAlbums.post.title, postWithAlbums.post.body))
-                    postWithAlbums.albumsWithPhotos.forEach { albumWithPhotos ->
-                        adapterList.add(AlbumListItem(albumWithPhotos.album.id, albumWithPhotos.album.title))
-                        albumWithPhotos.photos.forEach { photo ->
-                            adapterList.add(PhotoListItem(photo.id, photo.title, photo.url))
-                        }
-                    }
-
-                    return@map adapterList
-                }
+            presenter.getPost(postId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                    { adapter.submitList(it) },
+                    {
+                        adapter.submitList(it)
+                        recycler_view.scrollToPosition(0)
+                    },
                     Timber::e
                 )
         )
@@ -88,7 +79,7 @@ class DetailFragment : Fragment() {
         super.onStop()
     }
 
-    class Adapter: RecyclerView.Adapter<VH>() {
+    class Adapter : RecyclerView.Adapter<VH>() {
         private var items: List<ListItem>? = null
         var clickListener: ((ListItem) -> Unit)? = null
 
@@ -108,15 +99,33 @@ class DetailFragment : Fragment() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
             val inflater = LayoutInflater.from(parent.context)
             return when (viewType) {
-                R.layout.item_detail_header -> VH.HeaderVH(inflater.inflate(R.layout.item_detail_header, parent, false))
-                R.layout.item_detail_album -> VH.AlbumVH(inflater.inflate(R.layout.item_detail_album, parent, false))
-                R.layout.item_detail_photo -> VH.PhotoVH(inflater.inflate(R.layout.item_detail_photo, parent, false))
+                R.layout.item_detail_header -> VH.HeaderVH(
+                    inflater.inflate(
+                        R.layout.item_detail_header,
+                        parent,
+                        false
+                    )
+                )
+                R.layout.item_detail_album -> VH.AlbumVH(
+                    inflater.inflate(
+                        R.layout.item_detail_album,
+                        parent,
+                        false
+                    )
+                )
+                R.layout.item_detail_photo -> VH.PhotoVH(
+                    inflater.inflate(
+                        R.layout.item_detail_photo,
+                        parent,
+                        false
+                    )
+                )
                 else -> throw IllegalStateException("Unknown view type")
             }
         }
 
         override fun onBindViewHolder(holder: VH, position: Int) {
-            when(holder) {
+            when (holder) {
                 is VH.HeaderVH -> {
                     val headerListItem = items!![position] as HeaderListItem
                     holder.tvTitle.text = headerListItem.title
@@ -142,16 +151,16 @@ class DetailFragment : Fragment() {
     }
 
     sealed class VH(view: View) : RecyclerView.ViewHolder(view) {
-        class HeaderVH(view: View): VH(view) {
+        class HeaderVH(view: View) : VH(view) {
             val tvTitle: TextView = view.findViewById(R.id.tv_title)
             val tvBody: TextView = view.findViewById(R.id.tv_body)
         }
 
-        class AlbumVH(view: View): VH(view) {
+        class AlbumVH(view: View) : VH(view) {
             val tvTitle: TextView = view.findViewById(R.id.tv_album_title)
         }
 
-        class PhotoVH(view: View): VH(view) {
+        class PhotoVH(view: View) : VH(view) {
             val textView: TextView = view.findViewById(R.id.text_view)
             val imageView: ImageView = view.findViewById(R.id.image_view)
         }
