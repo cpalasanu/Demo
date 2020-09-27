@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,7 +44,6 @@ class MasterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         recycler_view.layoutManager = LinearLayoutManager(context)
         recycler_view.adapter = adapter
-//        recycler_view.addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
 
         adapter.clickListener = {
             if (activity is MainActivity) {
@@ -75,6 +75,41 @@ class MasterFragment : Fragment() {
                         })
             )
         }
+
+        search_view.setOnSearchClickListener {
+            tv_title.visibility = View.GONE
+        }
+
+        search_view.setOnCloseListener {
+            tv_title.visibility = View.VISIBLE
+            search(null)
+
+            return@setOnCloseListener false
+        }
+
+        search_view.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                search(query)
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                // nothing, only search on submit
+                return true
+            }
+        })
+    }
+
+    private fun search(searchStr: String?) {
+        disposable.add(
+            presenter.searchInPosts(searchStr)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    Timber.i("Posts: $it")
+                    adapter.submitList(it)
+                }, Timber::e)
+        )
     }
 
     override fun onStart() {
@@ -92,6 +127,11 @@ class MasterFragment : Fragment() {
 
     override fun onStop() {
         disposable.clear()
+
+        // clear SearchView
+        search_view.setQuery("", false)
+        search_view.isIconified = true
+
         super.onStop()
     }
 

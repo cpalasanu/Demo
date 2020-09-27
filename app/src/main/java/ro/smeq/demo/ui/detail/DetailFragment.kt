@@ -63,6 +63,7 @@ class DetailFragment : Fragment() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     {
+                        tv_title.text = "Post $postId"
                         adapter.submitList(it)
                         recycler_view.scrollToPosition(0)
                     },

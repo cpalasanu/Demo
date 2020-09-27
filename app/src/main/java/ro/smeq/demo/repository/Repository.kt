@@ -22,6 +22,10 @@ class Repository(private val api: Api, private val db: MyDatabase) {
         return db.postDao().getAllPosts()
     }
 
+    fun posts(searchStr: String?): Flowable<List<PostWithUserEmail>> {
+        return db.postDao().getAllPostsContaining("%$searchStr%")
+    }
+
     fun post(postId: Long): Flowable<PostWithRelatedAlbums> {
         return db.postDao().getPost(postId)
             .flatMap { post ->

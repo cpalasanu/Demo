@@ -10,6 +10,10 @@ interface PostDao {
     @Query("SELECT posts.*, users.email FROM posts INNER JOIN users ON posts.userId = users.id")
     fun getAllPosts(): Flowable<List<PostWithUserEmail>>
 
+    @Transaction
+    @Query("SELECT posts.*, users.email FROM posts INNER JOIN users ON posts.userId = users.id WHERE posts.title LIKE :searchStr")
+    fun getAllPostsContaining(searchStr: String?): Flowable<List<PostWithUserEmail>>
+
     @Query("SELECT * FROM posts WHERE posts.id = :postId")
     fun getPost(postId: Long): Flowable<Post>
 
