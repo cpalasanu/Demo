@@ -7,10 +7,10 @@ import ro.smeq.demo.repository.Repository
 
 class DetailPresenter(private val repository: Repository) {
     private var postId: Long? = null
-    private var postFlowable: ConnectableFlowable<List<ListItem>>? = null
+    private var postFlowable: ConnectableFlowable<MutableList<ListItem>>? = null
     private var disposable = CompositeDisposable()
 
-    fun getPost(postId: Long): Flowable<List<ListItem>> {
+    fun getPost(postId: Long): Flowable<MutableList<ListItem>> {
         if (this.postId != postId) {
             // clear previous subscriptions
             disposable.clear()
@@ -24,7 +24,7 @@ class DetailPresenter(private val repository: Repository) {
         return postFlowable!!
     }
 
-    private fun createPostFlowable(postId: Long): ConnectableFlowable<List<ListItem>> {
+    private fun createPostFlowable(postId: Long): ConnectableFlowable<MutableList<ListItem>> {
         return repository.post(postId)
             .map { postWithAlbums ->
                 val adapterList = ArrayList<ListItem>()
@@ -36,18 +36,19 @@ class DetailPresenter(private val repository: Repository) {
                     )
                 )
                 postWithAlbums.albumsWithPhotos.forEach { albumWithPhotos ->
+                    val photos =
+                        albumWithPhotos.photos.map { PhotoListItem(it.id, it.title, it.url) }
                     adapterList.add(
                         AlbumListItem(
                             albumWithPhotos.album.id,
-                            albumWithPhotos.album.title
+                            albumWithPhotos.album.title,
+                            false,
+                            photos
                         )
                     )
-                    albumWithPhotos.photos.forEach { photo ->
-                        adapterList.add(PhotoListItem(photo.id, photo.title, photo.url))
-                    }
                 }
 
-                return@map adapterList as List<ListItem>
+                return@map adapterList as MutableList<ListItem>
             }
             .replay(1)
     }

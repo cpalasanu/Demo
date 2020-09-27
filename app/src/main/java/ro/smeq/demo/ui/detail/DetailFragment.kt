@@ -80,10 +80,10 @@ class DetailFragment : Fragment() {
     }
 
     class Adapter : RecyclerView.Adapter<VH>() {
-        private var items: List<ListItem>? = null
+        private var items: MutableList<ListItem>? = null
         var clickListener: ((ListItem) -> Unit)? = null
 
-        fun submitList(newList: List<ListItem>?) {
+        fun submitList(newList: MutableList<ListItem>?) {
             items = newList
             notifyDataSetChanged()
         }
@@ -134,12 +134,50 @@ class DetailFragment : Fragment() {
                 is VH.AlbumVH -> {
                     val albumListItem = items!![position] as AlbumListItem
                     holder.tvTitle.text = albumListItem.title
+                    holder.itemView.setOnClickListener {
+                        toggleAlbumExpand(
+                            albumListItem,
+                            position,
+                            holder.tvTitle
+                        )
+                    }
+                    if (albumListItem.isExpanded) {
+                        holder.tvTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                            0, 0, R.drawable.ic_drop_up, 0
+                        )
+                    } else {
+                        holder.tvTitle.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                            0, 0, R.drawable.ic_drop_down, 0
+                        )
+                    }
                 }
                 is VH.PhotoVH -> {
                     val photoListItem = items!![position] as PhotoListItem
                     holder.textView.text = photoListItem.title
                     Picasso.get().load(photoListItem.imgUrl).into(holder.imageView)
                 }
+            }
+        }
+
+        private fun toggleAlbumExpand(
+            albumListItem: AlbumListItem,
+            position: Int,
+            tvAlbum: TextView
+        ) {
+            if (albumListItem.isExpanded) {
+                albumListItem.isExpanded = false
+                items?.removeAll(albumListItem.photos)
+                notifyItemRangeRemoved(position + 1, albumListItem.photos.size)
+                tvAlbum.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    0, 0, R.drawable.ic_drop_down, 0
+                )
+            } else {
+                albumListItem.isExpanded = true
+                items?.addAll(position + 1, albumListItem.photos)
+                notifyItemRangeInserted(position + 1, albumListItem.photos.size)
+                tvAlbum.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    0, 0, R.drawable.ic_drop_up, 0
+                )
             }
         }
 
