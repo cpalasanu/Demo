@@ -173,7 +173,10 @@ sealed class VH(view: View) : RecyclerView.ViewHolder(view) {
 
         fun bindData(photoListItem: PhotoListItem) {
             textView.text = photoListItem.title
-            Picasso.get().load(photoListItem.imgUrl).into(imageView)
+            Picasso.get()
+                .load(photoListItem.imgUrl)
+                .placeholder(R.drawable.img_placeholder)
+                .into(imageView)
         }
     }
 }

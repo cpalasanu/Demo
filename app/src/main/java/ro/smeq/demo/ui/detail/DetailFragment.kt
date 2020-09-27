@@ -2,6 +2,7 @@ package ro.smeq.demo.ui.detail
 
 import android.content.Context
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -47,12 +48,13 @@ class DetailFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        recycler_view.layoutManager = GridLayoutManager(context, 2).apply {
+        val gridColumns = calculateGridColumns()
+        recycler_view.layoutManager = GridLayoutManager(context, gridColumns).apply {
             orientation = GridLayoutManager.VERTICAL
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
                     return if (adapter.getItemViewType(position) == R.layout.item_detail_photo) 1
-                    else 2
+                    else gridColumns
                 }
             }
         }
@@ -62,6 +64,15 @@ class DetailFragment : Fragment() {
         arguments?.getLong(KEY_POST_ID)?.let {
             updatePost(it)
         }
+    }
+
+    private fun calculateGridColumns(): Int {
+        val metrics = DisplayMetrics()
+        (context as MainActivity).windowManager.defaultDisplay.getMetrics(metrics)
+        val widthDp = metrics.widthPixels / metrics.density
+
+        return if (widthDp > MIN_WIDTH_FOR_3_COLUMNS) 3
+        else 2
     }
 
     fun updatePost(postId: Long) {
@@ -87,5 +98,6 @@ class DetailFragment : Fragment() {
 
     companion object {
         const val KEY_POST_ID = "post_id"
+        const val MIN_WIDTH_FOR_3_COLUMNS = 800
     }
 }
