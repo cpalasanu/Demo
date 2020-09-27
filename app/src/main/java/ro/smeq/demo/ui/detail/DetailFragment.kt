@@ -13,6 +13,7 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_detail.*
 import ro.smeq.demo.MyApp
 import ro.smeq.demo.R
+import ro.smeq.demo.ui.MainActivity
 import ro.smeq.demo.ui.stickyheaders.StickyHeaderItemDecoration
 import timber.log.Timber
 import javax.inject.Inject
@@ -28,6 +29,13 @@ class DetailFragment : Fragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         (context.applicationContext as MyApp).applicationComponent.inject(this)
+
+        // fix for postId lost when changing screen orientation on phone
+        if (context is MainActivity) {
+            arguments?.getLong(KEY_POST_ID)?.let {
+                context.syncPostId(it)
+            }
+        }
     }
 
     override fun onCreateView(
