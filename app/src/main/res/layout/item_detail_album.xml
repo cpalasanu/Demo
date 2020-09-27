@@ -2,13 +2,21 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:orientation="horizontal"
+    android:background="@android:color/white"
     android:padding="@dimen/default_margin_double">
 
     <TextView
         android:id="@+id/tv_album_title"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
         android:textColor="@android:color/black"
         android:textSize="14sp" />
+
+    <ImageView
+        android:id="@+id/iv_dropdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_drop_down"/>
 </LinearLayout>
